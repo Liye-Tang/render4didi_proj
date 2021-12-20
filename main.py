@@ -838,7 +838,7 @@ def main():
 
 
 def test():
-    test_dir_ = 'test/test_20211220_2pm'
+    test_dir_ = 'simu_test/test_simu_20211220_9pm'
     test_dir = os.path.join(os.getcwd(), test_dir_)
     model_dir = 'experiment-2021-12-16-00-36-00'
     iter = 300000
@@ -858,4 +858,4 @@ def test():
 
 
 if __name__ == '__main__':
-    main()
+    test()
