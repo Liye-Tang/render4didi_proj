@@ -1,0 +1,7 @@
+task: "left"
+model_path: "/home/didi/idc/idc_model/idc_21_12_20_00_21_50_300000_mix.pb"
+traffic_light: "green"
+log_save_dir: "/home/didi/idc/idc_planner_info/test_simu_20211220_9am/"
+exp_comments: base_version:; modify:
+case:mix_left_green_2
+记录：自车能够较好的刹车，且刹车位置合适.

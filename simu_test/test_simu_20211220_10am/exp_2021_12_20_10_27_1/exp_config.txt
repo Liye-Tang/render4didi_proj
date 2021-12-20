@@ -1,0 +1,7 @@
+task: "left"
+model_path: "/home/didi/idc/idc_model/idc_21_12_20_00_21_50_300000_mix.pb"
+traffic_light: "green"
+log_save_dir: "/home/didi/idc/idc_planner_info/test_simu_20211220_9am/"
+exp_comments: base_version:; modify:
+case:mix_left_green_3
+记录：左转等待前车时，停车行为由安全护盾触发，接近路口时，停车行为同样由安全护盾触发
