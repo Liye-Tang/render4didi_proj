@@ -86,6 +86,7 @@ class DataReplay(object):
         self.plot_dict['path_value'] = get_list_of_path_values(self.info_list)
         # print(get_list_of_path_values(self.info_list))
         self.total_time = len(self.info_list)
+        sss = 1
         for i in range(len(self.info_list)):
             info_dict = self.info_list[i]
             # ego state
@@ -146,7 +147,7 @@ class DataReplay(object):
             self.plot_dict['decision_time_ms'].append(info_dict['decision']['decision_time_ns'] / 10e6)
             self.plot_dict['acc'].append(info_dict['decision']['normalized_acc_clamp'] * 2.25 -0.75)
             self.plot_dict['steer'].append(info_dict['decision']['normalized_front_wheel_clamp'] * 0.4 * 16.6 * 180 / pi)
-            print(info_dict['traj_pose'][-1])
+            # print(info_dict['traj_pose'][-1])
             self.plot_dict['acc_real'].append(
                 info_dict['traj_pose'][-1]['y'] if 'y' in info_dict['traj_pose'][-1].keys() else 0)
             self.plot_dict['steer_real'].append(
@@ -309,10 +310,12 @@ class DataReplay(object):
                           facecolor='green',
                           linewidth=1, alpha=0.7))
         ax.add_patch(
-            plt.Rectangle((-Para.CROSSROAD_SIZE_LAT / 2 - extension, Para.OFFSET_L), extension, Para.L_GREEN,
+            plt.Rectangle((-Para.CROSSROAD_SIZE_LAT / 2 - extension + Para.BIAS_LEFT_LAT, Para.OFFSET_L), extension,
+                          Para.L_GREEN,
                           edgecolor='white', facecolor='green',
                           linewidth=1, alpha=0.7))
-        ax.add_patch(plt.Rectangle((Para.OFFSET_D_X - extension * math.cos(Para.ANGLE_D / 180 * pi),
+        ax.add_patch(
+            plt.Rectangle((Para.OFFSET_D_X - extension * math.cos(Para.ANGLE_D / 180 * pi),
                                     Para.OFFSET_D_Y - extension * math.sin(Para.ANGLE_D / 180 * pi)),
                                    Para.D_GREEN, extension, edgecolor='white', facecolor='green',
                                    angle=-(90 - Para.ANGLE_D), linewidth=1, alpha=0.7))
@@ -324,7 +327,8 @@ class DataReplay(object):
             base = Para.OFFSET_L + Para.L_GREEN
             linestyle = dotted_line_style if i < Para.LANE_NUMBER_LAT_OUT else solid_line_style
             linewidth = 1 if i < Para.LANE_NUMBER_LAT_OUT else 1
-            plt.plot([-Para.CROSSROAD_SIZE_LAT / 2 - extension, -Para.CROSSROAD_SIZE_LAT / 2],
+            plt.plot([-Para.CROSSROAD_SIZE_LAT / 2 - extension + Para.BIAS_LEFT_LAT,
+                      -Para.CROSSROAD_SIZE_LAT / 2 + Para.BIAS_LEFT_LAT],
                      [base + sum(lane_width_flag[:i]), base + sum(lane_width_flag[:i])],
                      linestyle=linestyle, color='black', linewidth=linewidth)
         # Left in lane
@@ -334,7 +338,8 @@ class DataReplay(object):
             base = Para.OFFSET_L
             linestyle = dotted_line_style if i < Para.LANE_NUMBER_LAT_IN else solid_line_style
             linewidth = 1 if i < Para.LANE_NUMBER_LAT_IN else 1
-            plt.plot([-Para.CROSSROAD_SIZE_LAT / 2 - extension, -Para.CROSSROAD_SIZE_LAT / 2],
+            plt.plot([-Para.CROSSROAD_SIZE_LAT / 2 - extension + Para.BIAS_LEFT_LAT,
+                      -Para.CROSSROAD_SIZE_LAT / 2 + Para.BIAS_LEFT_LAT],
                      [base - sum(lane_width_flag[:i]), base - sum(lane_width_flag[:i])],
                      linestyle=linestyle, color='black', linewidth=linewidth)
 
@@ -431,11 +436,12 @@ class DataReplay(object):
         # roadblock
         roadblock_left = Wedge((Para.LEFT_X, Para.LEFT_Y), Para.ROADBLOCK_RADIUS, -90, 90, color='green', alpha=0.7)
         ax.add_patch(roadblock_left)
-        roadblock_right = Wedge((Para.RIGHT_X, Para.RIGHT_Y), Para.ROADBLOCK_RADIUS, 90, -90, color='green', alpha=0.7)
+        roadblock_right = Wedge((Para.RIGHT_X, Para.RIGHT_Y), Para.ROADBLOCK_RADIUS, 90, -90, color='green',
+                                alpha=0.7)
         ax.add_patch(roadblock_right)
 
         # Oblique
-        plt.plot([-Para.CROSSROAD_SIZE_LAT / 2, Para.OFFSET_U_X - (
+        plt.plot([-Para.CROSSROAD_SIZE_LAT / 2 + Para.BIAS_LEFT_LAT, Para.OFFSET_U_X - (
                 Para.U_IN_0 + Para.U_IN_1 + Para.BIKE_LANE_WIDTH + Para.PERSON_LANE_WIDTH) * math.cos(
             (90 - Para.ANGLE_U) / 180 * pi)],
                  [
@@ -444,7 +450,7 @@ class DataReplay(object):
                              Para.U_IN_0 + Para.U_IN_1 + Para.BIKE_LANE_WIDTH + Para.PERSON_LANE_WIDTH) * math.sin(
                          (90 - Para.ANGLE_U) / 180 * pi)],
                  color='black', linewidth=1)
-        plt.plot([-Para.CROSSROAD_SIZE_LAT / 2, Para.OFFSET_D_X - (
+        plt.plot([-Para.CROSSROAD_SIZE_LAT / 2 + Para.BIAS_LEFT_LAT, Para.OFFSET_D_X - (
                 Para.D_OUT_0 + Para.D_OUT_1 + Para.BIKE_LANE_WIDTH + Para.PERSON_LANE_WIDTH) * math.cos(
             (90 - Para.ANGLE_D) / 180 * pi)],
                  [
@@ -509,15 +515,18 @@ class DataReplay(object):
 
         lane_width_flag = [Para.L_IN_0, Para.L_IN_1, Para.L_IN_2, Para.L_IN_3,
                            Para.PERSON_LANE_WIDTH + Para.BIKE_LANE_WIDTH]  # left
-        plt.plot([-Para.CROSSROAD_SIZE_LAT / 2, -Para.CROSSROAD_SIZE_LAT / 2],
-                 [Para.OFFSET_L, Para.OFFSET_L - sum(lane_width_flag[:1])],
-                 color=h_color_1, linewidth=light_line_width)
-        plt.plot([-Para.CROSSROAD_SIZE_LAT / 2, -Para.CROSSROAD_SIZE_LAT / 2],
-                 [Para.OFFSET_L - sum(lane_width_flag[:1]), Para.OFFSET_L - sum(lane_width_flag[:3])],
-                 color=h_color_2, linewidth=light_line_width)
-        plt.plot([-Para.CROSSROAD_SIZE_LAT / 2, -Para.CROSSROAD_SIZE_LAT / 2],
-                 [Para.OFFSET_L - sum(lane_width_flag[:3]), Para.OFFSET_L - sum(lane_width_flag[:4])],
-                 color='gray', linewidth=light_line_width)
+        plt.plot(
+            [-Para.CROSSROAD_SIZE_LAT / 2 + Para.BIAS_LEFT_LAT, -Para.CROSSROAD_SIZE_LAT / 2 + Para.BIAS_LEFT_LAT],
+            [Para.OFFSET_L, Para.OFFSET_L - sum(lane_width_flag[:1])],
+            color=h_color_1, linewidth=light_line_width)
+        plt.plot(
+            [-Para.CROSSROAD_SIZE_LAT / 2 + Para.BIAS_LEFT_LAT, -Para.CROSSROAD_SIZE_LAT / 2 + Para.BIAS_LEFT_LAT],
+            [Para.OFFSET_L - sum(lane_width_flag[:1]), Para.OFFSET_L - sum(lane_width_flag[:3])],
+            color=h_color_2, linewidth=light_line_width)
+        plt.plot(
+            [-Para.CROSSROAD_SIZE_LAT / 2 + Para.BIAS_LEFT_LAT, -Para.CROSSROAD_SIZE_LAT / 2 + Para.BIAS_LEFT_LAT],
+            [Para.OFFSET_L - sum(lane_width_flag[:3]), Para.OFFSET_L - sum(lane_width_flag[:4])],
+            color='gray', linewidth=light_line_width)
 
         lane_width_flag = [Para.R_IN_0, Para.R_IN_1, Para.R_IN_2, Para.R_IN_3,
                            Para.PERSON_LANE_WIDTH + Para.BIKE_LANE_WIDTH]  # right
@@ -563,6 +572,7 @@ class DataReplay(object):
         ego_w = 2
 
         plot_phi_line('self_car', real_ego_x, real_ego_y, real_ego_phi, 'red')
+        ax.text(real_ego_x, real_ego_y + 3, 'x:{:.2f} y:{:.2f}'.format(real_ego_x, real_ego_y), color='red')
         draw_rotate_rec('self_car', real_ego_x, real_ego_y, real_ego_phi, ego_l, ego_w, 'red')
 
         # acc TODO:shift
@@ -612,17 +622,9 @@ class DataReplay(object):
             ax.text(interested_xs[num] + 0.05, interested_ys[num] + 0.15,
                      "{:.2f}".format(self.info[replay_counter]['attn_vector'][num]), color='purple', fontsize=12)
 
-
-        # # plot future trajectory
-        # ego_pose_xs = [ego_pose['x'] for ego_pose in self.info[replay_counter]['traj_pose']]
-        # ego_pose_ys = [ego_pose['y'] for ego_pose in self.info[replay_counter]['traj_pose']]
-        # ego_normalized_accs = [ego_pose['normalized_acc'] for ego_pose in self.info[replay_counter]['traj_pose']]
-        # ego_processed_accs = [2.25 * acc - 0.75 for acc in ego_normalized_accs]
-        # color = ['darkgreen' if processed_acc > 0 else 'darkred' for processed_acc in ego_processed_accs]
-        # alpha = [processed_acc / 1.5 if processed_acc > 0 else processed_acc / -3 for processed_acc in ego_processed_accs]
-        # point_size = np.ones_like(ego_pose_xs) * 5
-        # for k in range(len(color)):
-        #     ax.scatter(ego_pose_xs[k], ego_pose_ys[k], s=point_size[k], c=color[k], alpha=alpha[k]) # TODO
+        # stop line
+        x_left = [-30, -30]
+        ax.plot()
 
         # steering wheel
         ax_steer = plt.axes([0.6, 0, 0.2, 0.2])
@@ -824,21 +826,22 @@ def get_alpha(acc):
 
 
 def main():
-    try_path = '/home/tly/Desktop/plot_for_replay/test/test_20211220_2pm/exp_2021_12_20_15_47_2/try_2021_12_20_15_48_55'
-    model_dir = 'experiment-2021-12-16-00-36-00'
+    # os.makedirs('~/test_input')
+    try_path = '/home/tly/Desktop/plot_for_replay/simu_test/test_simu_20211221_11pm/exp_2021_12_21_22_33_9/try_2021_12_21_22_33_10'
+    model_dir = 'experiment-2021-12-20-23-51-19'
     iter = 300000
     replay_speed = 2
-    replay_data = get_replay_data(try_path)
+    replay_data = get_replay_data(try_path, start_time=20)
     data_replay = DataReplay(replay_data, try_path, model_dir=model_dir, iter=iter, replay_speed=replay_speed)
     data_replay.replay(save_video=False)
-    data_replay.plot_fig()
+    # data_replay.plot_fig()
     # for filepath in os.listdir(try_path):
     #     if is_binwary_file(try_path+'/'+filepath):
     #         os.remove(try_path+'/'+filepath)
 
 
 def test():
-    test_dir_ = 'simu_test/test_simu_20211220_9pm'
+    test_dir_ = 'simu_test/test_simu_20211221_2pm'
     test_dir = os.path.join(os.getcwd(), test_dir_)
     model_dir = 'experiment-2021-12-16-00-36-00'
     iter = 300000
@@ -846,16 +849,16 @@ def test():
     exps = [x for x in os.listdir(test_dir) if os.path.isdir(os.path.join(test_dir, x))]
     for exp in sorted(exps, key=lambda x: int(x[15:17].strip('_')) * 60 + int(x[18:20].strip('_'))):
         exp_dir = os.path.join(test_dir, exp)
-        print(exp_dir)
+        # print(exp_dir)
         trials = [x for x in os.listdir(exp_dir) if os.path.isdir(os.path.join(exp_dir, x))]
         for trial in sorted(trials, key=lambda x: int(x[15:17].strip('_')) * 60 + int(x[18:20].strip('_'))):
             try_dir = os.path.join(exp_dir, trial)
-            print(try_dir)
+            # print(try_dir)
             replay_data = get_replay_data(try_dir)
             data_replay = DataReplay(replay_data, try_dir, model_dir=model_dir, iter=iter, replay_speed=replay_speed)
-            data_replay.replay(save_video=True)
+            data_replay.replay(save_video=False)
             data_replay.plot_fig()
 
 
 if __name__ == '__main__':
-    test()
+    main()

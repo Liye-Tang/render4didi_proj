@@ -131,6 +131,7 @@ class Para:
     L_OUT_2, _ = calculate_distance_angle(E_I[7], E_I[8])
 
     CROSSROAD_SIZE_LAT = get_point_line_distance(W_I[5], [E_I[1], E_I[4]]) + WALK_WIDTH * 2
+    BIAS_LEFT_LAT = 1.5
 
     LANE_NUMBER_LON_IN = 2
     LANE_NUMBER_LON_OUT = 2
@@ -139,7 +140,7 @@ class Para:
 
     #roadblock
     ROADBLOCK_RADIUS = 4.5
-    LEFT_X = -CROSSROAD_SIZE_LAT / 2 + WALK_WIDTH
+    LEFT_X = -CROSSROAD_SIZE_LAT / 2 + WALK_WIDTH + BIAS_LEFT_LAT
     LEFT_Y = OFFSET_L + L_GREEN / 2
     RIGHT_X = CROSSROAD_SIZE_LAT / 2 - WALK_WIDTH
     RIGHT_Y = OFFSET_R + R_GREEN / 2
@@ -197,24 +198,45 @@ PERSON_MODE_DICT = dict(left=OrderedDict(c3=4),
                         straight=OrderedDict(c2=4),  # 0
                         right=OrderedDict(c1=4, c2=0))
 
-MODE2STEP = {'green_veh_left_1': 2+8+np.random.random() * 20, 'green_veh_left_2': 0+8+np.random.random() * 20,
-             'green_veh_left_3': 7+8+np.random.random() * 20, 'green_veh_left_4': 7+6+np.random.random() * 20,
-             'green_veh_right_1': 3+9+np.random.random() * 20, 'green_veh_right_2': 12+5+np.random.random() * 20,
-             'green_veh_straight_1': 5+9+np.random.random() * 20, 'green_veh_straight_2': 9+np.random.random() * 20,
-             'green_veh_straight_3': 4+6+np.random.random() * 20, 'green_veh_straight_4': 3+6+np.random.random() * 20,
-             'green_ego_left_1': 0, 'green_ego_right_1': 0, 'green_ego_straight_1': 0}
+MODE2STEP = {'green_mix_left_1': 7 + np.random.random() * 30, 'green_mix_left_2': 5 + np.random.random() * 30,
+             'green_mix_left_3': np.random.random() * 20, 'green_mix_straight_1': 11 + np.random.random() * 20,
+             'green_mix_straight_2': 11 + np.random.random() * 20, 'green_mix_straight_3': 8 + np.random.random() * 20,
+             'green_mix_straight_4': 3 + np.random.random() * 20, 'green_mix_right_1': 3+6+np.random.random() * 20,
+             'green_mix_right_2': 9+np.random.random() * 20, 'green_mix_right_3': 8+np.random.random() * 20,
+             'red_mix_right_4': 9+9+np.random.random() * 20, 'red_mix_right_5': 8+14+np.random.random() * 20,
+             'green_ped_left_1': 7+5, 'green_ped_left_2': 7+5, 'green_bike_left_1': 0+5, 'green_bike_left_2': 0+5,
+             'green_bike_left_3': 0+5,
+             'red_mix_left_1': 5 + 10, 'red_mix_left_2': 5 + 5,
+             'yellow_mix_left_1': 5 + 2, 'yellow_mix_left_2': 5 + 2,
+             'yellow_mix_left_3': 5 + 7, 'yellow_mix_left_4': 5 + 5,
+             'green_ped&bike_left_1': 7 + np.random.random() * 30, 'green_ped&bike_right_1': 3+6+np.random.random() * 20
+             }
 
-MODE2STEP_TEST = {'green_ego_left_1': 0+5, 'green_veh_left_1': 2+8, 'green_veh_left_2': 0+8,
-                  'green_veh_left_3': 7+8, 'green_veh_left_4': 7+6, 'green_ego_right_1': 5,
-                  'green_ego_straight_1': 5, 'green_veh_right_1': 3+9, 'green_veh_right_2': 12+5,
-                  'green_veh_straight_1': 5+9, 'green_veh_straight_2': 9, 'green_veh_straight_3': 4+6,
-                  'green_veh_straight_4': 3+6}
+MODE2STEP_TEST = {'green_mix_left_1': 7 + 5, 'green_mix_left_2': 7 + 5, 'green_mix_left_3': 7 + 6,
+                  'green_mix_straight_1': 2 + 11, 'green_mix_straight_2': 2 + 11,
+                  'green_mix_straight_3': 2 + 8, 'green_mix_straight_4': 2 + 3,
+                  'green_mix_right_1': 3+6, 'green_mix_right_2': 9, 'green_mix_right_3': 8,
+                  'red_mix_left_1': 5+10, 'red_mix_left_2': 5+5,
+                  'yellow_mix_left_1': 5+2, 'yellow_mix_left_2': 5+2,
+                  'yellow_mix_left_3': 5+7, 'yellow_mix_left_4': 5+5,
+                  'red_mix_right_4': 9+9, 'red_mix_right_5': 8+14,
+                  'green_ped_left_1': 7 + 5, 'green_ped_left_2': 7 + 5,
+                  'green_bike_left_1': 0 + 5, 'green_bike_left_2': 0 + 5, 'green_bike_left_3': 0 + 5,
+                  'green_ped&bike_left_1': 7 + 5,
+                  'green_ped&bike_right_1': 3 + 6
+                  }
 
-MODE2INDEX_TEST = {'green_ego_left_1': 500, 'green_veh_left_1': 500, 'green_veh_left_2': 450,
-                   'green_veh_left_3': 600, 'green_veh_left_4': 550, 'green_ego_right_1': 500,
-                   'green_ego_straight_1': 450, 'green_veh_right_1': 500, 'green_veh_right_2': 500,
-                   'green_veh_straight_1': 550, 'green_veh_straight_2': 550, 'green_veh_straight_3': 500,
-                   'green_veh_straight_4': 500}
+MODE2INDEX_TEST = {'green_mix_left_1': 500, 'green_mix_left_2': 500,
+                   'green_mix_left_3': 450, 'green_mix_straight_1': 480, 'green_mix_straight_2': 550,
+                   'green_mix_straight_3': 550, 'green_mix_straight_4': 500,
+                   'green_mix_right_1': 500, 'green_mix_right_2': 500, 'green_mix_right_3': 500,
+                   'red_mix_left_1': 500, 'red_mix_left_2': 500,
+                   'yellow_mix_left_1': 500, 'yellow_mix_left_2': 500,
+                   'yellow_mix_left_3': 450, 'yellow_mix_left_4': 500,
+                   'red_mix_right_4': 500, 'red_mix_right_5': 500,
+                   'green_ped_left_1': 450, 'green_ped_left_2': 500, 'green_bike_left_1': 500, 'green_bike_left_2': 500,
+                   'green_bike_left_3': 500, 'green_ped&bike_left_1': 500, 'green_ped&bike_right_1': 500
+                  }
 
 def dict2flat(inp):
     out = []
@@ -594,17 +616,11 @@ def _convert_sumo_coord_to_car_coord(x_in_sumo_coord, y_in_sumo_coord, a_in_sumo
     return x_in_car_coord, y_in_car_coord, deal_with_phi(a_in_car_coord)
 
 
-def deal_with_phi(phi, task=None):
-    if task == 'left':
-        while phi <= -180:
-            phi += 360
-        while phi > 360:
-            phi -= 360
-    else:
-        while phi > 180:
-            phi -= 360
-        while phi <= -180:
-            phi += 360
+def deal_with_phi(phi):
+    while phi > 180:
+        phi -= 360
+    while phi <= -180:
+        phi += 360
     return phi
 
 

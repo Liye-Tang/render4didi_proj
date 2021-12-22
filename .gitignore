@@ -128,7 +128,12 @@ dmypy.json
 # Pyre type checker
 .pyre/
 
+# pb model
+*.pb
+
 # simu_test and test and models
 /simu_test/
 /test/
 /models/
+
+

@@ -1,7 +1,0 @@
-task: "left"
-model_path: "/home/didi/idc/idc_model/idc_21_12_17_23_36_18_300000_ped.pb"
-traffic_light: "green"
-log_save_dir: "/home/didi/idc/idc_planner_info/test_simu_20211220_9pm/"
-exp_comments: base_version:; modify:
-case:ped_left_green_1
-记录：在交通流中更改行人位置后，仍然无法刹车，继续修改位置
