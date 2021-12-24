@@ -27,6 +27,7 @@ from env_build.dynamics_and_models import ReferencePath
 
 from env_build.utils.load_policy import LoadPolicy
 from env_build.endtoend_env_utils import *
+from render_utils import  *
 
 plt.rcParams['font.sans-serif'] = ['SimHei']
 plt.rcParams['axes.unicode_minus'] = False
@@ -106,7 +107,7 @@ class DataReplay(object):
 
             # decision info
             # add 0
-            for _ in ['selected_path_idx', 'is_safe']:
+            for _ in ['selected_path_idx', 'is_safe', 'normalized_front_wheel_clamp']:
                 if _ not in info_dict['decision'].keys():
                     info_dict['decision'][_] = 0
                     self.info_list[i]['decision'][_] = 0
@@ -137,16 +138,26 @@ class DataReplay(object):
             self.decision_info.append(info_dict['decision'])
 
             # plot_dict
-            self.plot_dict['normalized_acc'].append(info_dict['decision']['normalized_acc'])
-            self.plot_dict['normalized_front_wheel'].append(info_dict['decision']['normalized_front_wheel'] * 0.4 * 180 / pi)
-            self.plot_dict['normalized_acc_clamp'].append(info_dict['decision']['normalized_acc_clamp'])
-            self.plot_dict['normalized_front_wheel_clamp'].append(info_dict['decision']['normalized_front_wheel_clamp'] * 0.4 * 180 / pi)
-            self.plot_dict['v_x'].append(info_dict['ego_state']['v_x'])
-            self.plot_dict['v_y'].append(info_dict['ego_state']['v_y'])
-            self.plot_dict['r'].append(info_dict['ego_state']['r'])
-            self.plot_dict['decision_time_ms'].append(info_dict['decision']['decision_time_ns'] / 10e6)
-            self.plot_dict['acc'].append(info_dict['decision']['normalized_acc_clamp'] * 2.25 -0.75)
-            self.plot_dict['steer'].append(info_dict['decision']['normalized_front_wheel_clamp'] * 0.4 * 16.6 * 180 / pi)
+            self.plot_dict['normalized_acc'].append(
+                info_dict['decision']['normalized_acc'])
+            self.plot_dict['normalized_front_wheel'].append(
+                info_dict['decision']['normalized_front_wheel'] * STEER_SCALE * 180 / pi )
+            self.plot_dict['normalized_acc_clamp'].append(
+                info_dict['decision']['normalized_acc_clamp'])
+            self.plot_dict['normalized_front_wheel_clamp'].append(
+                info_dict['decision']['normalized_front_wheel_clamp'] * STEER_SCALE * 180 / pi)
+            self.plot_dict['v_x'].append(
+                info_dict['ego_state']['v_x'])
+            self.plot_dict['v_y'].append(
+                info_dict['ego_state']['v_y'])
+            self.plot_dict['r'].append(
+                info_dict['ego_state']['r'])
+            self.plot_dict['decision_time_ms'].append(
+                info_dict['decision']['decision_time_ns'] / 10e6)
+            self.plot_dict['acc'].append(
+                info_dict['decision']['normalized_acc_clamp'] * ACC_SCALE - ACC_SHIFT)
+            self.plot_dict['steer'].append(
+                info_dict['decision']['normalized_front_wheel_clamp'] * STEER_SCALE * STEER_RATIO * 180 / pi)
             # print(info_dict['traj_pose'][-1])
             self.plot_dict['acc_real'].append(
                 info_dict['traj_pose'][-1]['y'] if 'y' in info_dict['traj_pose'][-1].keys() else 0)
@@ -298,7 +309,7 @@ class DataReplay(object):
         if 'comment.txt' in os.listdir(self.try_dir):
             with open(self.try_dir + '/' + 'comment.txt', "r") as f:
                 data = f.read()
-                ax.text(20, 60, data, wrap=True, fontsize=14)
+                ax.text(-120, -60, data, wrap=True, fontsize=14)
 
         # config
         with open(os.path.dirname(self.try_dir) + '/' + 'exp_config.txt', "r") as f:
@@ -553,9 +564,9 @@ class DataReplay(object):
         other_types = [item['type'] for item in filted_all_other]
 
         for i in range(len(other_xs)):
-            ax.text(other_xs[i] - 40, other_ys[i] + 0,
-                    'x:{:.2f} y:{:.2f} phi:{:.2f} type{}'.format(other_xs[i], other_ys[i], other_as[i], other_types[i]),
-                    color='black')
+            # ax.text(other_xs[i] - 40, other_ys[i] + 0,
+            #         'x:{:.2f} y:{:.2f} phi:{:.2f} type{}'.format(other_xs[i], other_ys[i], other_as[i], other_types[i]),
+            #         color='black')
             plot_phi_line('self_car', other_xs[i], other_ys[i], other_as[i], 'red')
 
         draw_rotate_batch_rec(other_xs, other_ys, other_as, other_ls, other_ws, patch=False)
@@ -572,14 +583,16 @@ class DataReplay(object):
         ego_w = 2
 
         plot_phi_line('self_car', real_ego_x, real_ego_y, real_ego_phi, 'red')
-        ax.text(real_ego_x, real_ego_y + 3, 'x:{:.2f} y:{:.2f}'.format(real_ego_x, real_ego_y), color='red')
+        ax.text(real_ego_x, real_ego_y + 3,
+                'x:{:.2f} y:{:.2f} phi:{:.2f}'.format(real_ego_x, real_ego_y, real_ego_phi), color='red')
         draw_rotate_rec('self_car', real_ego_x, real_ego_y, real_ego_phi, ego_l, ego_w, 'red')
 
         # acc TODO:shift
-        processed_acc = self.decision_info[replay_counter]['normalized_acc_clamp'] * 2.25 - 0.75
+        processed_acc = self.decision_info[replay_counter]['normalized_acc_clamp'] * ACC_SCALE - ACC_SHIFT
         ax.text(-36, 55, 'processed acc:{:.2f}'.format(processed_acc))
         if processed_acc > 0:
-            is_acc_positve = plt.Circle((-30, 50), 2, color='g', alpha=processed_acc / 1.5)
+            # is_acc_positve = plt.Circle((-30, 50), 2, color='g', alpha=processed_acc / 1.5)
+            is_acc_positve = plt.Circle((-30, 50), 2, color='g', alpha=min(1, processed_acc / 1.5))
         else:
             is_acc_positve = plt.Circle((-30, 50), 2, color='r', alpha=min(1, processed_acc / -3))
         ax.add_patch(is_acc_positve)
@@ -615,10 +628,10 @@ class DataReplay(object):
         draw_rotate_batch_rec(interested_xs, interested_ys, interested_as, interested_ls, interested_ws, patch=True)
 
         for num in range(len(interested_vehs)):
-            ax.text(interested_xs[num] + -4, interested_ys[num] + 3.15,
-                    "x:{:.2f} y:{:.2f} v:{:.2f} {}".format(interested_xs[num], interested_ys[num], interested_vs[num], interested_types[num]),
-                    color='purple',
-                    fontsize=12)
+            # ax.text(interested_xs[num] + -4, interested_ys[num] + 3.15,
+            #         "x:{:.2f} y:{:.2f} v:{:.2f} phi:{:.2f}{}".format(interested_xs[num], interested_ys[num], interested_vs[num], interested_as[num], interested_types[num]),
+            #         color='purple',
+            #         fontsize=12)
             ax.text(interested_xs[num] + 0.05, interested_ys[num] + 0.15,
                      "{:.2f}".format(self.info[replay_counter]['attn_vector'][num]), color='purple', fontsize=12)
 
@@ -630,13 +643,21 @@ class DataReplay(object):
         ax_steer = plt.axes([0.6, 0, 0.2, 0.2])
         ax_steer.axis('off')
         ax_steer.axis("equal")
-        ax.text(43, -40, 'steering angle: {:.2f}'.format(decision_info['normalized_front_wheel_clamp'] * 0.4 * 16.6 * 180 / pi), fontdict=font) # TODO
+        ax.text(43, -40,
+                'steering angle: {:.2f}'.format(decision_info['normalized_front_wheel_clamp']
+                                                * STEER_SCALE * STEER_RATIO * 180 / pi),
+                fontdict=font) # TODO
         image_rotate = np.clip(ndimage.rotate(self.steer_img,
-                                              decision_info['normalized_front_wheel_clamp'] * 0.4 * 16.6 * 180 / pi,
+                                              decision_info['normalized_front_wheel_clamp'] * STEER_SCALE * STEER_RATIO * 180 / pi,
                                               reshape=False, cval=1.), 0.0, 1.0)
         ax_steer.imshow(image_rotate)
 
         ax.text(-120, 70, 'try_dir: {}'.format(self.try_dir[-47:]), fontdict=font)
+        # x = np.linspace(-50, 50, 100)
+        # y = -x - 10
+        # # z = -x + 15
+        # ax.plot(x, y)
+        # ax.plot(x, z)
 
         text_x, text_y_start = -110, 60
         ge = iter(range(0, 1000, 4))
@@ -827,36 +848,37 @@ def get_alpha(acc):
 
 def main():
     # os.makedirs('~/test_input')
-    try_path = '/home/tly/Desktop/plot_for_replay/simu_test/test_simu_20211221_11pm/exp_2021_12_21_22_33_9/try_2021_12_21_22_33_10'
-    model_dir = 'experiment-2021-12-20-23-51-19'
+    try_path = '/home/tly/render4didi_proj/test/test_20211224_2pm/exp_2021_12_24_16_48_54/try_2021_12_24_16_55_25'
+    model_dir = 'experiment-2021-12-16-00-54-59'
     iter = 300000
-    replay_speed = 2
+    replay_speed = 3
     replay_data = get_replay_data(try_path, start_time=20)
     data_replay = DataReplay(replay_data, try_path, model_dir=model_dir, iter=iter, replay_speed=replay_speed)
-    data_replay.replay(save_video=False)
-    # data_replay.plot_fig()
+    data_replay.replay(save_video=True)
+    data_replay.plot_fig()
     # for filepath in os.listdir(try_path):
     #     if is_binwary_file(try_path+'/'+filepath):
     #         os.remove(try_path+'/'+filepath)
 
 
 def test():
-    test_dir_ = 'simu_test/test_simu_20211221_2pm'
+    test_dir_ = 'test/test_20211224_2pm'
     test_dir = os.path.join(os.getcwd(), test_dir_)
-    model_dir = 'experiment-2021-12-16-00-36-00'
+    model_dir = 'experiment-2021-12-16-00-54-59'
     iter = 300000
-    replay_speed = 2
+    replay_speed = 3
     exps = [x for x in os.listdir(test_dir) if os.path.isdir(os.path.join(test_dir, x))]
     for exp in sorted(exps, key=lambda x: int(x[15:17].strip('_')) * 60 + int(x[18:20].strip('_'))):
         exp_dir = os.path.join(test_dir, exp)
+        exp_dir = '/home/tly/render4didi_proj/test/test_20211224_2pm/exp_2021_12_24_16_27_9'
         # print(exp_dir)
         trials = [x for x in os.listdir(exp_dir) if os.path.isdir(os.path.join(exp_dir, x))]
         for trial in sorted(trials, key=lambda x: int(x[15:17].strip('_')) * 60 + int(x[18:20].strip('_'))):
             try_dir = os.path.join(exp_dir, trial)
-            # print(try_dir)
+            print(try_dir)
             replay_data = get_replay_data(try_dir)
             data_replay = DataReplay(replay_data, try_dir, model_dir=model_dir, iter=iter, replay_speed=replay_speed)
-            data_replay.replay(save_video=False)
+            data_replay.replay(save_video=True)
             data_replay.plot_fig()
 
 

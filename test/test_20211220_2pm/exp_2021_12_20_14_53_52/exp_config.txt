@@ -1,5 +1,0 @@
-task: "left"
-model_path: "/home/pilot/idc/idc_model/idc_21_12_17_23_36_18_300000_ped.pb"
-traffic_light: "green"
-log_save_dir: "/home/pilot/idc/test_20211220_2pm/"
-exp_comments: base_version:d891b23; modify:
