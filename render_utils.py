@@ -15,3 +15,7 @@ else:
 
 # controller
 STEER_RATIO = 16.6
+
+# plot option
+SHOW_INTERESTED = True
+SHOW_OTHER = True

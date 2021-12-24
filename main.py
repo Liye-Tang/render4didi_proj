@@ -564,9 +564,10 @@ class DataReplay(object):
         other_types = [item['type'] for item in filted_all_other]
 
         for i in range(len(other_xs)):
-            # ax.text(other_xs[i] - 40, other_ys[i] + 0,
-            #         'x:{:.2f} y:{:.2f} phi:{:.2f} type{}'.format(other_xs[i], other_ys[i], other_as[i], other_types[i]),
-            #         color='black')
+            if SHOW_OTHER:
+                ax.text(other_xs[i] - 40, other_ys[i] + 0,
+                        'x:{:.2f} y:{:.2f} phi:{:.2f} type{}'.format(other_xs[i], other_ys[i], other_as[i], other_types[i]),
+                        color='black')
             plot_phi_line('self_car', other_xs[i], other_ys[i], other_as[i], 'red')
 
         draw_rotate_batch_rec(other_xs, other_ys, other_as, other_ls, other_ws, patch=False)
@@ -628,10 +629,11 @@ class DataReplay(object):
         draw_rotate_batch_rec(interested_xs, interested_ys, interested_as, interested_ls, interested_ws, patch=True)
 
         for num in range(len(interested_vehs)):
-            # ax.text(interested_xs[num] + -4, interested_ys[num] + 3.15,
-            #         "x:{:.2f} y:{:.2f} v:{:.2f} phi:{:.2f}{}".format(interested_xs[num], interested_ys[num], interested_vs[num], interested_as[num], interested_types[num]),
-            #         color='purple',
-            #         fontsize=12)
+            if SHOW_INTERESTED:
+                ax.text(interested_xs[num] + -4, interested_ys[num] + 3.15,
+                        "x:{:.2f} y:{:.2f} v:{:.2f} phi:{:.2f}{}".format(interested_xs[num], interested_ys[num], interested_vs[num], interested_as[num], interested_types[num]),
+                        color='purple',
+                        fontsize=12)
             ax.text(interested_xs[num] + 0.05, interested_ys[num] + 0.15,
                      "{:.2f}".format(self.info[replay_counter]['attn_vector'][num]), color='purple', fontsize=12)
 
@@ -653,11 +655,6 @@ class DataReplay(object):
         ax_steer.imshow(image_rotate)
 
         ax.text(-120, 70, 'try_dir: {}'.format(self.try_dir[-47:]), fontdict=font)
-        # x = np.linspace(-50, 50, 100)
-        # y = -x - 10
-        # # z = -x + 15
-        # ax.plot(x, y)
-        # ax.plot(x, z)
 
         text_x, text_y_start = -110, 60
         ge = iter(range(0, 1000, 4))
@@ -848,7 +845,7 @@ def get_alpha(acc):
 
 def main():
     # os.makedirs('~/test_input')
-    try_path = '/home/tly/render4didi_proj/test/test_20211224_2pm/exp_2021_12_24_16_48_54/try_2021_12_24_16_55_25'
+    try_path = '/home/tly/render4didi_proj/test/test_20211224_2pm/exp_2021_12_24_16_48_54/try_2021_12_24_16_58_49'
     model_dir = 'experiment-2021-12-16-00-54-59'
     iter = 300000
     replay_speed = 3
