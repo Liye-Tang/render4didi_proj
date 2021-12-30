@@ -3,8 +3,6 @@ import os
 import time
 import shutil
 import subprocess
-import magic
-import re
 from scipy import ndimage
 # import cv2
 import glob
@@ -27,7 +25,7 @@ from env_build.dynamics_and_models import ReferencePath
 
 from env_build.utils.load_policy import LoadPolicy
 from env_build.endtoend_env_utils import *
-from render_utils import  *
+from render_utils import *
 
 plt.rcParams['font.sans-serif'] = ['SimHei']
 plt.rcParams['axes.unicode_minus'] = False
@@ -205,7 +203,7 @@ class DataReplay(object):
             fig_path = os.path.join(self.try_dir, 'replay_results', 'figs')
             subprocess.call(['ffmpeg', '-framerate', '10', '-i', fig_path + '/' + '%03d.jpg',
                              self.try_dir + '/replay_results' + '/video.mp4'])
-            # shutil.rmtree(fig_path)
+            shutil.rmtree(fig_path)
 
     def plot_for_replay(self, ego_info, other_info, decision_info, save_video, replay_counter):
         extension = 40
@@ -584,11 +582,11 @@ class DataReplay(object):
         ego_w = 2
 
         plot_phi_line('self_car', real_ego_x, real_ego_y, real_ego_phi, 'red')
-        ax.text(real_ego_x, real_ego_y + 3,
-                'x:{:.2f} y:{:.2f} phi:{:.2f}'.format(real_ego_x, real_ego_y, real_ego_phi), color='red')
+        # ax.text(real_ego_x, real_ego_y + 3,
+        #         'x:{:.2f} y:{:.2f} phi:{:.2f}'.format(real_ego_x, real_ego_y, real_ego_phi), color='red')
         draw_rotate_rec('self_car', real_ego_x, real_ego_y, real_ego_phi, ego_l, ego_w, 'red')
 
-        # acc TODO:shift
+        # acc
         processed_acc = self.decision_info[replay_counter]['normalized_acc_clamp'] * ACC_SCALE - ACC_SHIFT
         ax.text(-36, 55, 'processed acc:{:.2f}'.format(processed_acc))
         if processed_acc > 0:
@@ -634,8 +632,9 @@ class DataReplay(object):
                         "x:{:.2f} y:{:.2f} v:{:.2f} phi:{:.2f}{}".format(interested_xs[num], interested_ys[num], interested_vs[num], interested_as[num], interested_types[num]),
                         color='purple',
                         fontsize=12)
-            ax.text(interested_xs[num] + 0.05, interested_ys[num] + 0.15,
-                     "{:.2f}".format(self.info[replay_counter]['attn_vector'][num]), color='purple', fontsize=12)
+            if interested_ys[num] > -60:
+                ax.text(interested_xs[num] + 0.05, interested_ys[num] + 0.15,
+                         "{:.2f}".format(self.info[replay_counter]['attn_vector'][num]), color='purple', fontsize=12)
 
         # stop line
         x_left = [-30, -30]
@@ -648,7 +647,7 @@ class DataReplay(object):
         ax.text(43, -40,
                 'steering angle: {:.2f}'.format(decision_info['normalized_front_wheel_clamp']
                                                 * STEER_SCALE * STEER_RATIO * 180 / pi),
-                fontdict=font) # TODO
+                fontdict=font) #
         image_rotate = np.clip(ndimage.rotate(self.steer_img,
                                               decision_info['normalized_front_wheel_clamp'] * STEER_SCALE * STEER_RATIO * 180 / pi,
                                               reshape=False, cval=1.), 0.0, 1.0)
@@ -747,9 +746,9 @@ class DataReplay(object):
             elif key == 'normalized_acc_clamp':
                 plt.ylim([-3, 1.5])
             elif key == 'steer':
-                plt.ylim([-240, 240])
+                plt.ylim([-300, 300])
             elif key == 'steer_real':
-                plt.ylim([-240, 240])
+                plt.ylim([-300, 300])
             elif key == 'normalized_front_wheel':
                 plt.ylim([-240, 240])
             elif key == 'normalized_front_wheel_clamp':
@@ -773,85 +772,36 @@ class DataReplay(object):
             plt.close(f)
 
 
-def get_replay_data(try_path, start_time=0):
-    filepaths = os.listdir(try_path)
-    idc_planner_info_list = []
-    for filepath in filepaths:
-        if is_binwary_file(try_path+'/'+filepath):
-            binfile = open(try_path+'/'+filepath, 'rb')  # 打开二进制文件
-            size = os.path.getsize(try_path+'/'+filepath)  # 获得文件大小
-            data = binfile.read(size)
-            binfile.close()
-            IdcPlannerInfo = pb.IdcPlannerInfo()
-            IdcPlannerInfo.ParseFromString(data)
-            d = protobuf_to_dict(IdcPlannerInfo)
-            idc_planner_info_list.append(d)
-    idc_planner_info_list = sorted(idc_planner_info_list, key=lambda x: x['timestamp'])
-    return idc_planner_info_list[start_time:]
-
-
-def is_binwary_file(ff):
-    mime_kw = 'x-executable|x-sharedlib|octet-stream|x-object'
-    try:
-        magic_mime = magic.from_file(ff, mime=True)
-        magic_hit = re.search(mime_kw, magic_mime, re.I)
-        if magic_hit:
-            return True
-        else:
-            return False
-    except Exception as e:
-        return False
-
-
-def image2video(forder):
-    os.chdir(forder)
-    subprocess.call(['ffmpeg', '-framerate', '10', '-i', 'step%03d.png', 'video.mp4'])
-
-
-def get_list_of_participants_in_obs(input_):
-    other_start_dim = 21
-    max_other_num = 18
-
-    def get_list_of_participants_dict(msg):
-        selected_path_idx = msg['decision'].get('selected_path_idx', None)
-        selected_path_idx = selected_path_idx if selected_path_idx else 0
-        selected_obs = msg['obs_vector'][selected_path_idx]['input_vector']
-        # attn_weights = msg[]
-        out = []
-        for i in range(max_other_num):
-            other_vector = selected_obs[other_start_dim + i * 10:other_start_dim + (i + 1) * 10]
-            parti_dict = dict(zip(['x', 'y', 'v', 'phi', 'l', 'w'], other_vector[:6]))
-            parti_dict.setdefault('type', other_vector[6:9])
-            out.append(parti_dict)
-        return out
-    return list(map(lambda msg: get_list_of_participants_dict(msg), input_))
-
-
-def get_list_of_path_values(input_):
-    path_num = len(input_[0]['decision']['path_value'])
-
-    def find_the_ith_value(msg, i):
-        return msg['decision']['path_value'][i]
-
-    out = []
-    for i in range(path_num):
-        out.append(list(map(lambda msg: find_the_ith_value(msg, i), input_)))
-    return out
-
-
-def get_alpha(acc):
-    return acc / 1.5 if acc > 0 else acc / -3
+def get_param(is_mix):
+    global ACC_SCALE
+    global ACC_SHIFT
+    global STEER_SCALE
+    global STEER_SHIFT
+    if is_mix:
+        ACC_SCALE = 1.5
+        ACC_SHIFT = 0.5
+        STEER_SCALE = 0.3
+        STEER_SHIFT = 0
+    else:
+        ACC_SCALE = 2.25
+        ACC_SHIFT = 0.75
+        STEER_SCALE = 0.4
+        STEER_SHIFT = 0
 
 
 def main():
     # os.makedirs('~/test_input')
-    try_path = '/home/tly/render4didi_proj/test/test_20211224_2pm/exp_2021_12_24_16_48_54/try_2021_12_24_16_58_49'
+    try_path = '/home/tly/render4didi_proj/test/zzz/exp_2021_12_25_15_24_37/try_2021_12_25_15_37_47'
+    with open(os.path.dirname(try_path) + '/' + 'exp_config.txt', "r") as f:
+        config = f.read()
+    is_mix = 'mix' in config and 'veh' not in config
+    get_param(is_mix)
     model_dir = 'experiment-2021-12-16-00-54-59'
     iter = 300000
-    replay_speed = 3
-    replay_data = get_replay_data(try_path, start_time=20)
+    replay_speed = 1
+    replay_data = get_replay_data(try_path, start_time=0)
     data_replay = DataReplay(replay_data, try_path, model_dir=model_dir, iter=iter, replay_speed=replay_speed)
-    data_replay.replay(save_video=True)
+    data_replay.replay(save_video=False)
     data_replay.plot_fig()
     # for filepath in os.listdir(try_path):
     #     if is_binwary_file(try_path+'/'+filepath):
@@ -859,20 +809,22 @@ def main():
 
 
 def test():
-    test_dir_ = 'test/test_20211224_2pm'
+    test_dir_ = 'test/test_20211230_10am'
     test_dir = os.path.join(os.getcwd(), test_dir_)
     model_dir = 'experiment-2021-12-16-00-54-59'
     iter = 300000
-    replay_speed = 3
+    replay_speed = 2
     exps = [x for x in os.listdir(test_dir) if os.path.isdir(os.path.join(test_dir, x))]
     for exp in sorted(exps, key=lambda x: int(x[15:17].strip('_')) * 60 + int(x[18:20].strip('_'))):
         exp_dir = os.path.join(test_dir, exp)
-        exp_dir = '/home/tly/render4didi_proj/test/test_20211224_2pm/exp_2021_12_24_16_27_9'
-        # print(exp_dir)
+        with open(exp_dir + '/' + 'exp_config.txt', "r") as f:
+            config = f.read()
+        is_mix = 'mix' in config and 'veh' not in config
+        get_param(is_mix)
         trials = [x for x in os.listdir(exp_dir) if os.path.isdir(os.path.join(exp_dir, x))]
         for trial in sorted(trials, key=lambda x: int(x[15:17].strip('_')) * 60 + int(x[18:20].strip('_'))):
             try_dir = os.path.join(exp_dir, trial)
-            print(try_dir)
+            # print(try_dir)
             replay_data = get_replay_data(try_dir)
             data_replay = DataReplay(replay_data, try_dir, model_dir=model_dir, iter=iter, replay_speed=replay_speed)
             data_replay.replay(save_video=True)
@@ -880,4 +832,4 @@ def test():
 
 
 if __name__ == '__main__':
-    main()
+    test()
